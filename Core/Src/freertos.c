@@ -38,15 +38,15 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 SemaphoreHandle_t Remote_semaphore;
-uint16_t _stack[12] = {0};
-extern TaskHandle_t Wheel_Handles[3];
-extern TaskHandle_t Can_Send_Handle;
+uint16_t _stack[9] = {0};
+extern TaskHandle_t Remote_Analysis_Handle;
+extern TaskHandle_t Uart_Send_Handle;
+extern TaskHandle_t Uart_Tx_Handle;
 extern TaskHandle_t task_handle;
 extern TaskHandle_t SendDataPackTask_handle;
 extern TaskHandle_t ReceiveDataPackTask_handle;
 extern TaskHandle_t ACKTimeoutCheckTask_handle;
 extern CommHandle_t *g_comm_handle;
-extern TaskHandle_t Remote_Analysis_Handle;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -155,17 +155,15 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-		_stack[0]=uxTaskGetStackHighWaterMark(Wheel_Handles[0]);
-		_stack[1]=uxTaskGetStackHighWaterMark(Wheel_Handles[1]);
-		_stack[2]=uxTaskGetStackHighWaterMark(Wheel_Handles[2]);
-		_stack[3]=uxTaskGetStackHighWaterMark(Can_Send_Handle);
-		_stack[4]=uxTaskGetStackHighWaterMark(task_handle);
-		_stack[5]=uxTaskGetStackHighWaterMark(SendDataPackTask_handle);
-		_stack[6]=uxTaskGetStackHighWaterMark(ReceiveDataPackTask_handle);
-		_stack[7]=uxTaskGetStackHighWaterMark(ACKTimeoutCheckTask_handle);
-		_stack[8]=uxTaskGetStackHighWaterMark(defaultTaskHandle);
-		_stack[9]=uxTaskGetStackHighWaterMark(g_comm_handle->tx_task_handle);
-		_stack[10]=uxTaskGetStackHighWaterMark(Remote_Analysis_Handle);
+		_stack[0]=uxTaskGetStackHighWaterMark(Uart_Send_Handle);
+		_stack[1]=uxTaskGetStackHighWaterMark(Uart_Tx_Handle);
+		_stack[2]=uxTaskGetStackHighWaterMark(task_handle);
+		_stack[3]=uxTaskGetStackHighWaterMark(SendDataPackTask_handle);
+		_stack[4]=uxTaskGetStackHighWaterMark(ReceiveDataPackTask_handle);
+		_stack[5]=uxTaskGetStackHighWaterMark(ACKTimeoutCheckTask_handle);
+		_stack[6]=uxTaskGetStackHighWaterMark(defaultTaskHandle);
+		_stack[7]=uxTaskGetStackHighWaterMark(g_comm_handle->tx_task_handle);
+		_stack[8]=uxTaskGetStackHighWaterMark(Remote_Analysis_Handle);
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */

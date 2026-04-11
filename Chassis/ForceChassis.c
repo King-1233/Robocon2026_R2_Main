@@ -31,19 +31,6 @@ void ChassisCalculateProcess(void *param)
     TickType_t last_wake_time = xTaskGetTickCount();
     while (1)
     {
-        // 安全检查部分:
-        uint8_t safe_check=0;
-        for(int i=0;i<wheel_num;i++)
-        {
-            WheelState state=chassis->wheel[i]->state_cb(chassis->wheel[i]);
-            if(state==WHEEL_HEALTH)   //轮子正常
-                safe_check=safe_check|(0x01<<i);
-            else if(state==WHEEL_IDEL)  //如果是空闲模式，请求执行复位
-                chassis->wheel[i]->reset_cb(chassis->wheel[i]);
-            else if(state==WHEEL_ERROR) //轮子出现错误，执行底盘回调通知应用层
-                chassis->wheel_err_cb(chassis,chassis->wheel[i]);
-        }
-
         //如果底盘硬件通过了安全检查，那么执行后面的数学解算
         // 逆解部分:
         // TODO:底盘期望速度->轮子期望速度
@@ -70,22 +57,6 @@ void ChassisCalculateProcess(void *param)
 
             chassis->wheel[i]->set_target_cb(chassis->wheel[i], exp_dir, exp_vel, torque_projection);
 						chassis->wheel[i]->last_rad=exp_dir;
-        }
-
-        // 正解部分:
-        for (int i = 0; i < wheel_num; i++) //获取轮子当前的速度，填写矩阵b
-        {
-            Vector2D temp = chassis->wheel[i]->get_vel_cb(chassis->wheel[i]);
-            cur_velocity[2 * i] = temp.x;
-            cur_velocity[2 * i + 1] = temp.y;
-        }
-
-        int ret=solve_linear_system_qr_f32(&chassis->vel_A_mat, &wheel_cur_vel_mat, &robot_cur_vel_mat); //求解机器人速度
-        if (ret == 0)   //求解正确，更新数据
-        {
-            chassis->cur_vel.x=robot_cur_vel[0];
-            chassis->cur_vel.y=robot_cur_vel[1];
-            chassis->cur_vel.z=robot_cur_vel[2];
         }
 
         vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(chassis->update_dt_ms));

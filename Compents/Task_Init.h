@@ -45,4 +45,23 @@ typedef enum{
     AUTO,
 }ChassisMode;
 
+#pragma pack(1)
+typedef struct
+{
+    uint8_t head;
+    float expectDirection[2];
+    float expextVelocity[2];
+    uint8_t tail;
+} Pack_TransRemote_t;
+#pragma pack()
+
+typedef struct
+{
+    UART_HandleTypeDef *huart;
+    uint16_t len;
+    uint8_t data[32];   // 你的结构体大约 1+8+8+1=18字节，32足够
+} UartTxMsg_t;
+
+void Send_Remote_Data(UART_HandleTypeDef *huart,float dir_one, float dir_two,float vel_one, float vel_two);
+
 #endif
