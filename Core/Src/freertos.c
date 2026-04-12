@@ -40,7 +40,7 @@
 SemaphoreHandle_t Remote_semaphore;
 uint16_t _stack[9] = {0};
 extern TaskHandle_t Remote_Analysis_Handle;
-extern TaskHandle_t Uart_Send_Handle;
+extern TaskHandle_t UartTxTask_Handle;
 extern TaskHandle_t Uart_Tx_Handle;
 extern TaskHandle_t task_handle;
 extern TaskHandle_t SendDataPackTask_handle;
@@ -155,7 +155,7 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-		_stack[0]=uxTaskGetStackHighWaterMark(Uart_Send_Handle);
+		_stack[0]=uxTaskGetStackHighWaterMark(UartTxTask_Handle);
 		_stack[1]=uxTaskGetStackHighWaterMark(Uart_Tx_Handle);
 		_stack[2]=uxTaskGetStackHighWaterMark(task_handle);
 		_stack[3]=uxTaskGetStackHighWaterMark(SendDataPackTask_handle);

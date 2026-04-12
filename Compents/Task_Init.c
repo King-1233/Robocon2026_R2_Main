@@ -17,7 +17,7 @@ Chassis_t chassis;
 
 //句柄
 TaskHandle_t Remote_Analysis_Handle;
-TaskHandle_t Uart_Send_Handle;
+TaskHandle_t UartTxTask_Handle;
 TaskHandle_t Uart_Tx_Handle;
 
 //遥控器数据
@@ -30,8 +30,7 @@ extern SemaphoreHandle_t Remote_semaphore;
 void Remote_Analysis_Task(void *pvParameters);
 void Uart_Tx(void *pvParameters);
 void UartTxTask(void *pvParameters);
-
-ChassisMode chassis_mode = REMOTE;
+void UartTx_Init(void);
 
 void Task_Init(void)
 {
@@ -43,6 +42,8 @@ void Task_Init(void)
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart5, usart5_dma_buff, sizeof(usart5_dma_buff));
 		__HAL_DMA_DISABLE_IT(huart5.hdmarx, DMA_IT_HT);
     
+		UartTx_Init();
+	
     wheelArray[0].pos.x =  0.325f;
     wheelArray[0].pos.y =  0.294f; 
     wheelArray[0].pos.z =  0.0f;
@@ -66,13 +67,11 @@ void Task_Init(void)
     Vector2D barycenter = {0, 0};
     ChassisInit(&chassis, wheelArray, 4, barycenter, 25.2f, 1.25f, 0.00001f, 2, 600, 4);
 		xTaskCreate(Remote_Analysis_Task, "Remote_Analysis_Task", 128, NULL, 4, &Remote_Analysis_Handle);
-		xTaskCreate(Uart_Tx, "Uart_Tx", 256, NULL, 4, &Uart_Tx_Handle);
-		xTaskCreate(Uart_Send, "Uart_Send", 256, NULL, 4, &Uart_Send_Handle);
-    
+		xTaskCreate(Uart_Tx, "Uart_Tx", 256, NULL, 3, &Uart_Tx_Handle);
+		xTaskCreate(UartTxTask, "UartTxTask", 256, NULL, 5, &UartTxTask_Handle);
 }
 
 PackControl_t recv_pack;
-Pack_TransRemote_t trans_pack[2];
 uint8_t recv_buff[20] = {0};
 float rocker_filter[4] = {0};
 static void Key_Parse(uint32_t key, hw_key_t *out)
@@ -130,6 +129,9 @@ CommPackRecv_Cb  recv_cb = MyRecvCallback;
 
 void Remote_Analysis_Task(void *pvParameters)
 {
+	g_comm_handle = Comm_Init(&huart5);
+	RemoteCommInit(NULL);
+	register_comm_recv_cb(recv_cb, 0x01, &recv_pack);
 	while(1)
 	{
 		Remote_Analysis();
@@ -188,12 +190,14 @@ void UartTxTask(void *pvParameters)
 void Uart_Tx(void *pvParameters)
 {
   TickType_t last_wake_time = xTaskGetTickCount();
-  UartTx_Init();
   while(1)
   {
+		chassis.exp_vel.x = Remote_Control.Ex;
+		chassis.exp_vel.y = Remote_Control.Ey;
+		chassis.exp_vel.z = Remote_Control.Eomega;
     Send_Remote_Data(&huart2, steeringWheelArray[0].expectDirection, steeringWheelArray[1].expectDirection, steeringWheelArray[0].expextVelocity, steeringWheelArray[1].expextVelocity);
-    Send_Remote_Data(&huart2, steeringWheelArray[2].expectDirection, steeringWheelArray[3].expectDirection, steeringWheelArray[2].expextVelocity, steeringWheelArray[3].expextVelocity);
-    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(2));
+    Send_Remote_Data(&huart6, steeringWheelArray[2].expectDirection, steeringWheelArray[3].expectDirection, steeringWheelArray[2].expextVelocity, steeringWheelArray[3].expextVelocity);
+    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(20));
   }
 }
 
@@ -234,12 +238,12 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 				// 对于ORE、NE、FE错误，需要先读SR再读DR
 				volatile uint32_t temp_sr = READ_REG(huart->Instance->SR);
 				volatile uint32_t temp_dr = READ_REG(huart->Instance->DR); // 这个读取会清除ORE、NE、FE        
-
+		}
+		
 		if (isrflags & USART_SR_PE)
 		{
 				volatile uint32_t temp_sr = READ_REG(huart->Instance->SR);
 		}
-	}
 		Comm_UART_IRQ_Handle(g_comm_handle, &huart5, usart5_dma_buff, 0);
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart5, usart5_dma_buff,sizeof(usart5_dma_buff));
 		__HAL_DMA_DISABLE_IT(huart5.hdmarx, DMA_IT_HT);
