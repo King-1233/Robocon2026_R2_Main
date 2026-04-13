@@ -46,16 +46,16 @@ void Task_Init(void)
 	
     wheelArray[0].pos.x =  0.325f;
     wheelArray[0].pos.y =  0.294f; 
-    wheelArray[0].pos.z =  0.0f;
+    wheelArray[0].pos.z =  PI;
     wheelArray[1].pos.x =  0.325f;
     wheelArray[1].pos.y =  -0.294f;
-    wheelArray[1].pos.z =  0.0f;
+    wheelArray[1].pos.z =  PI;
     wheelArray[2].pos.x =  -0.325f;
     wheelArray[2].pos.y =  -0.294f;
-    wheelArray[2].pos.z =  0.0f;
+    wheelArray[2].pos.z =  PI;
     wheelArray[3].pos.x =  -0.325f;
     wheelArray[3].pos.y =   0.294f;
-    wheelArray[3].pos.z =  0.0f;
+    wheelArray[3].pos.z =  PI;
 
     for(int i = 0; i < 4; i++)
     {
@@ -187,17 +187,39 @@ void UartTxTask(void *pvParameters)
   }
 }
 
+float v1,v2,v3,v4;
+Pack_TransRemote_t pack_t[2];
 void Uart_Tx(void *pvParameters)
 {
   TickType_t last_wake_time = xTaskGetTickCount();
+	pack_t[0].head = 0xAB;
+	pack_t[0].tail = 0xBA;
+	
+	pack_t[1].head = 0xAB;
+	pack_t[1].tail = 0xBA;
+	
   while(1)
   {
+		pack_t[0].expectDirection[0] = steeringWheelArray[0].expectDirection;
+		pack_t[0].expectDirection[1] = steeringWheelArray[1].expectDirection;
+		pack_t[0].expextVelocity[0] = steeringWheelArray[0].expextVelocity;
+		pack_t[0].expextVelocity[1] = steeringWheelArray[1].expextVelocity;
+		
+		pack_t[1].expectDirection[0] = steeringWheelArray[2].expectDirection;
+		pack_t[1].expectDirection[1] = steeringWheelArray[3].expectDirection;
+		pack_t[1].expextVelocity[0] = steeringWheelArray[2].expextVelocity;
+		pack_t[1].expextVelocity[1] = steeringWheelArray[3].expextVelocity;
+		
 		chassis.exp_vel.x = Remote_Control.Ex;
 		chassis.exp_vel.y = Remote_Control.Ey;
 		chassis.exp_vel.z = Remote_Control.Eomega;
-    Send_Remote_Data(&huart2, steeringWheelArray[0].expectDirection, steeringWheelArray[1].expectDirection, steeringWheelArray[0].expextVelocity, steeringWheelArray[1].expextVelocity);
-    Send_Remote_Data(&huart6, steeringWheelArray[2].expectDirection, steeringWheelArray[3].expectDirection, steeringWheelArray[2].expextVelocity, steeringWheelArray[3].expextVelocity);
-    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(20));
+//    Send_Remote_Data(&huart2, steeringWheelArray[0].expectDirection, steeringWheelArray[1].expectDirection, steeringWheelArray[0].expextVelocity, steeringWheelArray[1].expextVelocity);
+//    Send_Remote_Data(&huart6, steeringWheelArray[2].expectDirection, steeringWheelArray[3].expectDirection, steeringWheelArray[2].expextVelocity, steeringWheelArray[3].expextVelocity);
+    HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&pack_t[0], sizeof(Pack_TransRemote_t));
+		HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&pack_t[1], sizeof(Pack_TransRemote_t));
+		
+		
+		vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(20));
   }
 }
 
