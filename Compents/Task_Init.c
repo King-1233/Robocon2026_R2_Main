@@ -11,6 +11,8 @@
 #include "Action_Config.h"
 #include "Action.h"
 
+#include "crc_ccitt.h"
+
 SteeringWheel steeringWheelArray[4];
 Wheel_t wheelArray[4];
 Chassis_t chassis;
@@ -215,7 +217,9 @@ void Uart_Tx(void *pvParameters)
 		chassis.exp_vel.z = Remote_Control.Eomega;
 //    Send_Remote_Data(&huart2, steeringWheelArray[0].expectDirection, steeringWheelArray[1].expectDirection, steeringWheelArray[0].expextVelocity, steeringWheelArray[1].expextVelocity);
 //    Send_Remote_Data(&huart6, steeringWheelArray[2].expectDirection, steeringWheelArray[3].expectDirection, steeringWheelArray[2].expextVelocity, steeringWheelArray[3].expextVelocity);
-    HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&pack_t[0], sizeof(Pack_TransRemote_t));
+    pack_t[0].crc = crc_ccitt(0, (uint8_t *)&pack_t[0], sizeof(Pack_TransRemote_t)-2);
+		pack_t[1].crc = crc_ccitt(0, (uint8_t *)&pack_t[1], sizeof(Pack_TransRemote_t)-2);
+		HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&pack_t[0], sizeof(Pack_TransRemote_t));
 		HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&pack_t[1], sizeof(Pack_TransRemote_t));
 		
 		

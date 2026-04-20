@@ -52,6 +52,7 @@ typedef struct
     float expectDirection[2];
     float expextVelocity[2];
     uint8_t tail;
+		uint16_t crc;
 } Pack_TransRemote_t;
 #pragma pack()
 
