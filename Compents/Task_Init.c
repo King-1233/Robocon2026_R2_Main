@@ -54,7 +54,7 @@ void Task_Init(void)
 
 		xTaskCreate(Uart_RXTask, "Uart_RXTask", 300, NULL, 4, &Uart_Handle);
 		
-		xTaskCreate(ChassisCalculateProcess, "ChassisCalculateProcess", 300, &chassis, 4, &task_handle);
+		xTaskCreate(ChassisCalculateProcess, "ChassisCalculateProcess", 300, &chassis, 5, &task_handle);
 }
 
 void Wheel_Task(void *pvParameters)
@@ -79,7 +79,7 @@ void Wheel_Task(void *pvParameters)
     swheel->Driver_Vel_PID.Kp = 0.8f;
     swheel->Driver_Vel_PID.Ki = 0.002f;
     swheel->Driver_Vel_PID.Kd = 4.5f;
-    swheel->Driver_Vel_PID.limit = 10000.0f;
+    swheel->Driver_Vel_PID.limit = 50000.0f;
     swheel->Driver_Vel_PID.output_limit = 45.0f;
 
     swheel->offset = 0.0f;
@@ -118,7 +118,6 @@ void Can_Send(void *pvParameters)
 			steeringWheelArray[1].expectDirection = Pack_Trans.expectDirection[1];
 			steeringWheelArray[0].expextVelocity = -Pack_Trans.expextVelocity[0];
 			steeringWheelArray[1].expextVelocity = -Pack_Trans.expextVelocity[1];
-			
 			
 			motorCurrentBuf[2] = steeringWheelArray[0].Steering_Vel_PID.pid_out;
 			motorCurrentBuf[3] = steeringWheelArray[1].Steering_Vel_PID.pid_out;

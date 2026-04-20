@@ -26,8 +26,8 @@ Vector2D GetWheelVelocity_Callback(Wheel_t *_this)
 
     Vector2D velocity;
     velocity.x = (pSteWhe->DriveMotor.epm/20.0f) * 60.0f * 2.0f * 3.1415926f * n * wheel_radius * cosf(ANGLE2RAD(pSteWhe->currentDirection));
-		velocity.y = (pSteWhe->DriveMotor.epm/20.0f) * 2.0f * 3.1415926f * n * wheel_radius * sinf(ANGLE2RAD(pSteWhe->currentDirection));
-		return velocity;
+	velocity.y = (pSteWhe->DriveMotor.epm/20.0f) * 2.0f * 3.1415926f * n * wheel_radius * sinf(ANGLE2RAD(pSteWhe->currentDirection));
+	return velocity;
 }
 
 void WheelError_Callback(Chassis_t *_this, Wheel_t *wheel)
@@ -58,12 +58,12 @@ void LimitAngle(float* angle)
 
 float AngleDiffer(float angle1,float angle2)
 {
-		float temp=angle1-angle2;
-		if(temp>180.0f)
-			return temp-360.0f;
-		else if(temp<-180.0f)
-			return temp+360.0f;
-		return temp;
+	float temp=angle1-angle2;
+	if(temp>180.0f)
+		return temp-360.0f;
+	else if(temp<-180.0f)
+		return temp+360.0f;
+	return temp;
 }
 
 // MinorArcDeal是一个智能的舵轮转向优化算法，它：

@@ -866,6 +866,16 @@
               <FileType>5</FileType>
               <FilePath>..\BaseLib\My_list.h</FilePath>
             </File>
+            <File>
+              <FileName>crc_ccitt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BaseLib\crc_ccitt.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc_ccitt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BaseLib\crc_ccitt.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

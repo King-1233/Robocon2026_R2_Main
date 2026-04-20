@@ -24,12 +24,15 @@
 /* USER CODE BEGIN Includes */
 #include "Task_Init.h"
 #include "semphr.h"
+#include "crc_ccitt.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 extern uint8_t usart4_dma_buff[40];
 extern SemaphoreHandle_t Chassis_semaphore;
+uint16_t value = 0;  
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -340,9 +343,14 @@ void UART4_IRQHandler(void)
     HAL_UART_DMAStop(&huart4);
     if (usart4_dma_buff[0] == 0xAB && usart4_dma_buff[17] == 0xBA)
     {
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      xSemaphoreGiveFromISR(Chassis_semaphore, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			value = (uint16_t)usart4_dma_buff[18] |
+                 ((uint16_t)usart4_dma_buff[19] << 8);
+			if(value == crc_ccitt(0, usart4_dma_buff, sizeof(Pack_TransRemote_t)-2))
+			{
+				BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+				xSemaphoreGiveFromISR(Chassis_semaphore, &xHigherPriorityTaskWoken);
+				portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+			}
     }
     HAL_UART_Receive_DMA(&huart4, usart4_dma_buff, sizeof(usart4_dma_buff));
   }
