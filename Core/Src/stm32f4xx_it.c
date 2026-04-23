@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "Task_Init.h"
 #include "semphr.h"
+#include "Callback.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -339,7 +340,7 @@ void USART2_IRQHandler(void)
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
-
+   UART_IT(&huart3);
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
@@ -381,6 +382,7 @@ void DMA1_Stream7_IRQHandler(void)
 void UART4_IRQHandler(void)
 {
   /* USER CODE BEGIN UART4_IRQn 0 */
+	 UART_IT(&huart4);
   // UART4 now used for transmitting key values, no JY61 reception
   /* USER CODE END UART4_IRQn 0 */
   HAL_UART_IRQHandler(&huart4);

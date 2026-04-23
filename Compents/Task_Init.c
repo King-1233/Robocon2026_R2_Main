@@ -10,6 +10,7 @@
 #include "Action_Config.h"
 #include "Action.h"
 #include "usart.h"
+#include "STP-23L.h"
 SteeringWheel steeringWheelArray[4];
 Wheel_t wheelArray[4];
 Chassis_t chassis;
@@ -22,6 +23,7 @@ TaskHandle_t KeySendTask_Handle; // 按键发送任务
 
 // 遥控器数据
 uint8_t usart5_dma_buff[60];
+uint8_t STP3_Data[194], STP4_Data[194];
 Remote_Handle_t Remote_Control;
 extern SemaphoreHandle_t Remote_semaphore;
 
@@ -38,7 +40,13 @@ void Task_Init(void)
   __HAL_UART_ENABLE_IT(&huart5, UART_IT_IDLE);
   HAL_UARTEx_ReceiveToIdle_DMA(&huart5, usart5_dma_buff, sizeof(usart5_dma_buff));
   __HAL_DMA_DISABLE_IT(huart5.hdmarx, DMA_IT_HT);
-
+	
+  	 __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
+    HAL_UART_Receive_DMA(&huart3, STP3_Data, sizeof(STP3_Data));
+	
+    __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
+    HAL_UART_Receive_DMA(&huart4, STP4_Data, sizeof(STP4_Data));
+	
   UartTx_Init();
 
   wheelArray[0].pos.x = 0.325f;
@@ -289,25 +297,25 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     __HAL_DMA_DISABLE_IT(huart5.hdmarx, DMA_IT_HT);
   }
 }
-void Send_Uint32_To_Uart4(uint32_t data)
-{
-  KeyUint32Pack_t pack;
-  pack.head = 0x5A;      // 帧头
-  pack.key_value = data; // uint32_t按键值
-  pack.tail = 0xA5;      // 帧尾
+//void Send_Uint32_To_Uart4(uint32_t data)
+//{
+//  KeyUint32Pack_t pack;
+//  pack.head = 0x5A;      // 帧头
+//  pack.key_value = data; // uint32_t按键值
+//  pack.tail = 0xA5;      // 帧尾
 
-  HAL_UART_Transmit_DMA(&huart4, (uint8_t *)&pack, sizeof(KeyUint32Pack_t));
-}
+//  HAL_UART_Transmit_DMA(&huart4, (uint8_t *)&pack, sizeof(KeyUint32Pack_t));
+//}
 
-void KeySendTask(void *pvParameters)
-{
-  TickType_t last_wake_time = xTaskGetTickCount();
+//void KeySendTask(void *pvParameters)
+//{
+//  TickType_t last_wake_time = xTaskGetTickCount();
 
-  while (1)
-  {
-		
-  //  Send_Uint32_To_Uart4(recv_pack.Key);
-		
-    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(20)); // 20ms检测一次
-  }
-}
+//  while (1)
+//  {
+//		
+//  //  Send_Uint32_To_Uart4(recv_pack.Key);
+//		
+//    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(20)); // 20ms检测一次
+//  }
+//}

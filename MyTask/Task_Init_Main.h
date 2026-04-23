@@ -5,8 +5,7 @@
 #include "freertos.h"
 #include "CANDrive.h"
 #include "usart.h"
-#include "RobStride2.h"
-extern 
+#include "RobStride2.h" 
 void Task_Init_Main(void);                                                                           // 初始化主任务
 void MotorInit(void);                                                                                // 初始化电机
 void RS_Offest_inv(LiftMotor_t *LiftMotor, int8_t inv_motor, float pos_offset,float torque);         // 电机方向取反

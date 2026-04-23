@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "ForceChassis.h" 
 #include "Task_Init.h"
+#include "STP-23L.h"
 typedef struct
 {
     RobStride_t Rs_motor;      // 电机结构体
@@ -63,8 +64,8 @@ typedef struct
 {
     uint8_t head; 
     uint8_t state;
-		uint8_t back;
-}Arm_t;
+	uint8_t back;
+}Arm_t;//机械臂是否执行一次动作结构体
 typedef struct
 {
     LiftMotor_t motors[3];             // 电机指针数
@@ -77,6 +78,8 @@ typedef struct
     DescendState_e descend_state;      // 下台阶状态
     DescendState_e last_descend_state; // 上一个下台阶状态
     LiftMode_e work_mode;              // 工作模式
+	  STP_23L_Data sensor_front;
+	  STP_23L_Data sensor_rear;
     float height_lift_up;              // 车身整体抬升的目标高度 (米)
     float back_height_retract;         // 机构收起时的目标高度 (米)
     float pos_error_threshold;         // 判断是否到位的位置误差阈值 (弧度或米)

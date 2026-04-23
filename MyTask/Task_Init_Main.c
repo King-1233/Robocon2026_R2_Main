@@ -4,7 +4,6 @@
 #include "Task_Init_Main.h"
 #include "Run.h"
 #include <math.h>
-
 void Task_Init_Main(void)
 {
     CanFilter_Init(&hcan1);

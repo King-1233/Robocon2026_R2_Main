@@ -78,4 +78,5 @@ void Send_Remote_Data(UART_HandleTypeDef *huart,float dir_one, float dir_two,flo
 extern Chassis_Vel_t chassis_vel;
 extern ChassisMode chassis_mode;       // 当前底盘模式
 extern Remote_Handle_t Remote_Control;
+extern uint8_t STP3_Data[194], STP4_Data[194];
 #endif

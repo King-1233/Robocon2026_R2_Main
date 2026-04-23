@@ -5,20 +5,14 @@
 #include "TrajectoryMath.h"
 #include "math.h"
 
-LiftSystem_t LiftSystem; // 3个提升电机
-Arm_t arm;
-uint8_t test_triggered_up = 0;
-uint8_t test_triggered_down = 0;
-uint8_t test_triggered_test_front = 0;
-uint8_t test_triggered_test_mid = 0;
-uint8_t test_triggered_test_rear = 0;
-float hi=0.1f;
-uint8_t shuang=0;
-// 按键状态机变量
-static uint8_t key_press_count_200 = 0; // 按键次数计数器
-static uint8_t key_press_count_400 = 0; // 按键次数计数器
-static uint8_t key_down_count_200 = 0;  // 上次按键状态，用于检测下降沿
-static uint8_t key_down_count_400 = 0;  // 上次按键状态，用于检测下降沿
+LiftSystem_t LiftSystem;               // 3个提升电机
+//Arm_t arm;                             // 机械臂是否执行一次动作结构体实例
+uint8_t test_triggered_up = 0;         // 上台阶测试触发标志位
+uint8_t test_triggered_down = 0;       // 下台阶测试触发标志位
+uint8_t test_triggered_test_front = 0; // 前轮测试触发标志位
+uint8_t test_triggered_test_mid = 0;   // 中轮测试触发标志位
+uint8_t test_triggered_test_rear = 0;  // 后轮测试触发标志位
+uint8_t shuang = 0;                    // 是否双轮测试标志位
 TaskHandle_t Rising_Task_handle = NULL;
 static bool IsMotorAtTarget(const LiftMotor_t *motor, float target_rad);
 /**
@@ -61,242 +55,38 @@ void Rising_Task(void *pvParameters)
       LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[2], LiftSystem.lift_cmd[2].target_height, LiftSystem.lift_cmd[2].duration_ms);
       test_triggered_test_rear = 0;
     }
-//		if(Remote_Control.First.Right_Key_Down && Remote_Control.Second.Right_Key_Down)
-//		{
-//			 LiftSystem.lift_cmd[0].target_height = 0.32f;
-//        LiftSystem.lift_cmd[1].target_height = 0.32f;
-//        LiftSystem.lift_cmd[2].target_height = 0.32f;
-//        test_triggered_test_front = 1;
-//        test_triggered_test_mid = 1;
-//        test_triggered_test_rear = 1;
-//		}
-//		if(Remote_Control.First.Right_Key_Right && Remote_Control.Second.Right_Key_Right)
-//		{
-//			 LiftSystem.lift_cmd[0].target_height =hi;
-//			LiftSystem.lift_cmd[0].duration_ms =500.0f;
-//        test_triggered_test_front = 1;
-//		}
-//		if(Remote_Control.First.Right_Key_Up && Remote_Control.Second.Right_Key_Up)
-//		{
-//			 LiftSystem.lift_cmd[1].target_height =hi;
-//			LiftSystem.lift_cmd[1].duration_ms =500.0f;
-//        test_triggered_test_mid = 1;
-//		}
-//		if(Remote_Control.First.Right_Key_Left && Remote_Control.Second.Right_Key_Left)
-//		{
-//			 LiftSystem.lift_cmd[2].target_height =hi;
-//			LiftSystem.lift_cmd[2].duration_ms =500.0f;
-//        test_triggered_test_rear = 1;
-//		}
-//		
-//		
-		
-		
-////    if(Remote_Control.First.Right_Key_Down && Remote_Control.Second.Right_Key_Down)
-////    {
-////      // 检测到按键下降沿，计数器加1
-////      key_press_count_200++;
-////      if (key_press_count_200 > 4)
-////      {
-////        key_press_count_200 = 1; // 超过4次后回到1
-////      }
-////      // 根据按键次数执行不同任务
-////      switch (key_press_count_200)
-////      {
-////      case 1: // 第1次按下：前电机升起
-////        LiftSystem.lift_cmd[0].target_height = 0.22f;
-////        LiftSystem.lift_cmd[1].target_height = 0.22f;
-////        LiftSystem.lift_cmd[2].target_height = 0.22f;
-////        test_triggered_test_front = 1;
-////        test_triggered_test_mid = 1;
-////        test_triggered_test_rear = 1;
-////        break;
-
-////      case 2: // 第2次按下：前电机归位
-////        LiftSystem.lift_cmd[0].target_height = 0.0f;
-////        test_triggered_test_front = 1;
-////        break;
-
-////      case 3: // 第3次按下：中电机归位
-////        LiftSystem.lift_cmd[1].target_height = 0.0f;
-////        test_triggered_test_mid = 1;
-////        break;
-
-////      case 4: // 第4次按下：全部归位
-////        LiftSystem.lift_cmd[2].target_height = 0.0f;
-////        test_triggered_test_rear = 1;
-////        break;
-
-////      default:
-////        break;
-////      }
-////    }
-////    if (Remote_Control.First.Right_Key_Up && Remote_Control.Second.Right_Key_Up)
-////    {
-////      // 检测到按键下降沿，计数器加1
-////      key_press_count_400++;
-////      if (key_press_count_400 > 4)
-////      {
-////        key_press_count_400 = 1; // 超过4次后回到1
-////      }
-////      // 根据按键次数执行不同任务
-////      switch (key_press_count_400)
-////      {
-////      case 1: // 第1次按下：前电机升起
-////        LiftSystem.lift_cmd[0].target_height = 0.42f;
-////        LiftSystem.lift_cmd[1].target_height = 0.42f;
-////        LiftSystem.lift_cmd[2].target_height = 0.42f;
-////        test_triggered_test_front = 1;
-////        test_triggered_test_mid = 1;
-////        test_triggered_test_rear = 1;
-////        break;
-
-////      case 2: // 第2次按下：前电机归位
-////        LiftSystem.lift_cmd[0].target_height = 0.0f;
-////        test_triggered_test_front = 1;
-////        break;
-
-////      case 3: // 第3次按下：中电机归位
-////        LiftSystem.lift_cmd[1].target_height = 0.0f;
-////        test_triggered_test_mid = 1;
-////        break;
-
-////      case 4: // 第4次按下：全部归位
-////        LiftSystem.lift_cmd[2].target_height = 0.0f;
-////        test_triggered_test_rear = 1;
-////        break;
-
-////      default:
-////        break;
-////      }
-////    }
-////		
-////    if (Remote_Control.First.Right_Key_Left && Remote_Control.Second.Right_Key_Left)
-////    {
-////      key_down_count_200++;
-////      if (key_down_count_200 > 4)
-////      {
-////        key_down_count_200 = 1; // 超过4次后回到1
-////      }
-////      // 根据按键次数执行不同任务
-////      switch (key_down_count_200)
-////      {
-////      case 1: // 第1次按下：前电机升起
-////        LiftSystem.lift_cmd[0].target_height = 0.22f;
-////        test_triggered_test_front = 1;
-////        break;
-
-////      case 2: // 第2次按下：前电机归位
-////        LiftSystem.lift_cmd[1].target_height = 0.22f;
-////        test_triggered_test_mid = 1;
-////        break;
-
-////      case 3: // 第3次按下：中电机归位
-////        LiftSystem.lift_cmd[2].target_height = 0.22f;
-////        test_triggered_test_rear = 1;
-////        break;
-
-////      case 4: // 第4次按下：全部归位
-////        LiftSystem.lift_cmd[0].target_height = 0.0f;
-////        LiftSystem.lift_cmd[1].target_height = 0.0f;
-////        LiftSystem.lift_cmd[2].target_height = 0.0f;
-////        test_triggered_test_rear = 1;
-////        test_triggered_test_front = 1;
-////        test_triggered_test_mid = 1;
-////        break;
-
-////      default:
-////        break;
-////      }
-////    }
-////    if (Remote_Control.First.Right_Key_Right && Remote_Control.Second.Right_Key_Right)
-////    {
-////      key_down_count_400++;
-////      if (key_down_count_400 > 4)
-////      {
-////        key_down_count_400 = 1; // 超过4次后回到1
-////      }
-////      // 根据按键次数执行不同任务
-////      switch (key_down_count_400)
-////      {
-////      case 1: // 第1次按下：前电机升起
-////        LiftSystem.lift_cmd[0].target_height = 0.45f;
-////        test_triggered_test_front = 1;
-////        break;
-
-////      case 2: // 第2次按下：前电机归位
-////        LiftSystem.lift_cmd[1].target_height = 0.45f;
-////        test_triggered_test_mid = 1;
-////        break;
-
-////      case 3: // 第3次按下：中电机归位
-////        LiftSystem.lift_cmd[2].target_height = 0.45f;
-////        test_triggered_test_rear = 1;
-////        break;
-
-////      case 4: // 第4次按下：全部归位
-////        LiftSystem.lift_cmd[0].target_height = 0.1f;
-////        LiftSystem.lift_cmd[1].target_height = 0.1f;
-////        LiftSystem.lift_cmd[2].target_height = 0.1f;
-////        test_triggered_test_rear = 1;
-////        test_triggered_test_front = 1;
-////        test_triggered_test_mid = 1;
-////        break;
-
-////      default:
-////        break;
-////      }
-////    }
-//    if (Remote_Control.First.Left_Key_Down && Remote_Control.Second.Left_Key_Down)
+//    if (Remote_Control.First.Left_Key_Up && Remote_Control.Second.Left_Key_Up)
 //    {
-//			key_down_count_400=0;
-//			key_down_count_200=0;
-//			key_press_count_400=0;
-//			key_press_count_200=0;
-//      LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[0], 0.0f, 1500.0f);
-//      LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[1], 0.0f, 1500.0f);
-//      LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[2], 0.0f, 1500.0f);
+//      arm.head = 0xAA;
+//      arm.state = 1;
+//      arm.back = 0xBB;
+//      HAL_UART_Transmit_DMA(&huart4, (uint8_t *)&arm, sizeof(Arm_t));
 //    }
-			if (Remote_Control.First.Left_Key_Up && Remote_Control.Second.Left_Key_Up)
-   {
-		 arm.head=0xAA;
-		 arm.state=1;
-		 arm.back=0xBB;
-		 HAL_UART_Transmit_DMA(&huart4, (uint8_t *)&arm, sizeof(Arm_t));
-	 }
-	 if(shuang)
-	 {
-		 test_triggered_test_front=1;
-		 test_triggered_test_rear=1;
-		 shuang=0;
-	 }
-	 
+    if (shuang)
+    {
+      test_triggered_test_front = 1;
+      test_triggered_test_rear = 1;
+      shuang = 0;
+    }
     LiftSystem_Update(&LiftSystem);
     for (int i = 0; i < 3; i++)
     {
       LiftMotor_UpdateTrajectory(&LiftSystem.motors[i], current_tick);
     }
-		
-    LiftMotor_t *m0 = &LiftSystem.motors[0];
-float ff_torque0 = m0->exp_acc * LiftSystem.inertia_gain + m0->exp_torque;
-float target_pos0 = m0->pos_offset + m0->exp_rad;
-RobStrideMotionControl(&m0->Rs_motor, m0->Rs_motor.motor_id,
-                        ff_torque0, target_pos0, m0->exp_omega,
-                        70, LiftSystem.motion_kd);
 
-LiftMotor_t *m1 = &LiftSystem.motors[1];
-float ff_torque1 = m1->exp_acc * LiftSystem.inertia_gain + m1->exp_torque;
-float target_pos1 = m1->pos_offset + m1->exp_rad;
-RobStrideMotionControl(&m1->Rs_motor, m1->Rs_motor.motor_id,
-                        ff_torque1, target_pos1, m1->exp_omega,
-                        70, LiftSystem.motion_kd);
-
-LiftMotor_t *m2 = &LiftSystem.motors[2];
-float ff_torque2 = m2->exp_acc * LiftSystem.inertia_gain + m2->exp_torque;
-float target_pos2 = m2->pos_offset + m2->exp_rad;
-RobStrideMotionControl(&m2->Rs_motor, m2->Rs_motor.motor_id,
-                        ff_torque2, target_pos2, m2->exp_omega,
-                        70, LiftSystem.motion_kd);
+    for (int i = 0; i < 3; i++)
+    {
+      LiftMotor_t *m = &LiftSystem.motors[i];
+      float ff_torque = m->exp_acc * LiftSystem.inertia_gain + m->exp_torque;
+      float target_pos = m->pos_offset + m->exp_rad;
+      RobStrideMotionControl(&m->Rs_motor,
+                             m->Rs_motor.motor_id,
+                             ff_torque,
+                             target_pos,
+                             m->exp_omega,
+                             LiftSystem.motion_kp,
+                             LiftSystem.motion_kd);
+    }
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(2));
   }
 }
@@ -329,12 +119,12 @@ void LiftSystem_Init(LiftSystem_t *sys) // 初始化提升系统
   sys->descend_state = DOWN_IDLE;
   sys->last_descend_state = DOWN_IDLE;
   sys->work_mode = LIFT_MODE_IDLE;
-  sys->motion_kp = 12.0f;
+  sys->motion_kp = 70.0f;
   sys->motion_kd = 0.2f;
   sys->inertia_gain = 0.08f;
   sys->height_lift_up = 0.2f;
   sys->back_height_retract = 0.0f;
-  sys->pos_error_threshold = 0.001f;
+  sys->pos_error_threshold = 0.05f;
 
   for (int i = 0; i < 3; i++)
   {
