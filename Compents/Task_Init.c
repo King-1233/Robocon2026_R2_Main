@@ -13,6 +13,8 @@
 
 #include "crc_ccitt.h"
 
+#include "Run.h"
+
 SteeringWheel steeringWheelArray[4];
 Wheel_t wheelArray[4];
 Chassis_t chassis;
@@ -212,10 +214,26 @@ void Uart_Tx(void *pvParameters)
 		pack_t[1].expextVelocity[0] = steeringWheelArray[2].expextVelocity;
 		pack_t[1].expextVelocity[1] = steeringWheelArray[3].expextVelocity;
 		
-		
+		if (LiftSystem.work_mode == LIFT_MODE_IDLE) 
+		{
 		chassis.exp_vel.x = Remote_Control.Ex;
 		chassis.exp_vel.y = Remote_Control.Ey;
 		chassis.exp_vel.z = Remote_Control.Eomega;
+		}
+		else 
+		{
+			if (Remote_Control.First.Left_Key_Down && Remote_Control.Second.Left_Key_Down)
+			{
+				LiftSystem.work_mode = LIFT_MODE_IDLE;
+				chassis.exp_vel.x = 0;
+				chassis.exp_vel.y = 0;
+				chassis.exp_vel.z = 0;
+			}
+			// 自动模式 这里不做处理
+			// 此时底盘的 chassis.exp_vel 由 Rising_Task 里的 ClimbFSM_Step() 状态机负责赋值
+			// 屏蔽遥控器输入，防止指令打架
+			
+		}
 //    Send_Remote_Data(&huart2, steeringWheelArray[0].expectDirection, steeringWheelArray[1].expectDirection, steeringWheelArray[0].expextVelocity, steeringWheelArray[1].expextVelocity);
 //    Send_Remote_Data(&huart6, steeringWheelArray[2].expectDirection, steeringWheelArray[3].expectDirection, steeringWheelArray[2].expextVelocity, steeringWheelArray[3].expextVelocity);
     pack_t[0].crc = crc_ccitt(0, (uint8_t *)&pack_t[0], sizeof(Pack_TransRemote_t)-2);

@@ -180,28 +180,32 @@ void ClimbFSM_Step(LiftSystem_t *sys) // 状态机更新
 //			LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->lift_cmd[0].target_height, sys->lift_cmd[0].duration_ms);
 //			LiftMotor_SetTrajectoryTarget(&sys->motors[1], sys->lift_cmd[1].target_height, sys->lift_cmd[1].duration_ms);
 //			LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->lift_cmd[2].target_height, sys->lift_cmd[2].duration_ms);
-		LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->height_lift_up, sys->lift_cmd[0].duration_ms);
-		LiftMotor_SetTrajectoryTarget(&sys->motors[1], sys->height_lift_up, sys->lift_cmd[1].duration_ms);
+//      LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->height_lift_up, sys->lift_cmd[0].duration_ms);
+		LiftMotor_SetTrajectoryTarget(&sys->motors[1], (sys->height_lift_up), sys->lift_cmd[1].duration_ms);
 		LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->height_lift_up, sys->lift_cmd[2].duration_ms);
     }
 //		if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->lift_cmd[0].target_height)) &&
 //        IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->lift_cmd[1].target_height)) &&
 //        IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->lift_cmd[2].target_height)))
-    if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->height_lift_up)) &&
-        IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->height_lift_up)) &&
+//    if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->height_lift_up)) &&
+//        IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->height_lift_up)) &&
+//        IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->height_lift_up)))
+		    if (IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->height_lift_up)) &&
         IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->height_lift_up)))
     {
       sys->climb_state = CLIMB_FORWARD_1;
     }
     break;
   case CLIMB_FORWARD_1:
-		if (is_state_entry) 
-		{
-     sys->state_start_tick = xTaskGetTickCount();
-    }
-		if (xTaskGetTickCount() - sys->state_start_tick >= 500) {
-        sys->climb_state = CLIMB_RETRACT_FRONT;
-    }
+		chassis.exp_vel.x=-0.12f;
+	  sys->climb_state = CLIMB_FORWARD_2;
+//		if (is_state_entry) 
+//		{
+//     sys->state_start_tick = xTaskGetTickCount();
+//    }
+//		if (xTaskGetTickCount() - sys->state_start_tick >= 500) {
+//        sys->climb_state = CLIMB_RETRACT_FRONT;
+//    }
     break;
   case CLIMB_RETRACT_FRONT:
     if (is_state_entry)
@@ -240,13 +244,15 @@ void ClimbFSM_Step(LiftSystem_t *sys) // 状态机更新
     if (is_state_entry)
     {
       LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->back_height_retract, sys->lift_cmd[2].duration_ms);
+			sys->state_start_tick = xTaskGetTickCount();
     }
-    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->back_height_retract)))
+    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->back_height_retract))&&(xTaskGetTickCount() - sys->state_start_tick >= 1800.0f))
     {
       sys->climb_state = CLIMB_DONE;
     }
     break;
   case CLIMB_DONE:
+		chassis.exp_vel.x=0.0f;
     sys->climb_state = CLIMB_IDLE;
     sys->work_mode = LIFT_MODE_IDLE;
     break;
@@ -263,13 +269,14 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
   case DOWN_IDLE:
     break;
   case DOWN_FORWARD_1:
-   if (sys->motors[0].Rs_motor.state.torque <= 2.5f) 
+		chassis.exp_vel.x=-0.12f;
+   if (sys->motors[0].Rs_motor.state.torque <= 2.0f) 
     {
         sys->state_start_tick = xTaskGetTickCount(); 
     }
 		else 
     {
-        if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(200)) 
+        if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(400)) 
         {
             sys->descend_state = DOWN_EXTEND_FRONT;
         }
@@ -303,12 +310,27 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
     break;
   case DOWN_FORWARD_3:
 		if (is_state_entry) 
-		{
-     sys->state_start_tick = xTaskGetTickCount();
+    {
+        sys->state_start_tick = xTaskGetTickCount();
     }
-		if (xTaskGetTickCount() - sys->state_start_tick >= 700) {
-        sys->descend_state = DOWN_EXTEND_REAR;
+		if (sys->motors[2].Rs_motor.state.torque >=-1.0f) 
+    {
+        sys->state_start_tick = xTaskGetTickCount(); 
     }
+		else 
+    {
+        if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(1000)) 
+        {
+            sys->descend_state = DOWN_EXTEND_REAR;
+        }
+    }
+//		if (is_state_entry) 
+//		{
+//     sys->state_start_tick = xTaskGetTickCount();
+//    }
+//		if (xTaskGetTickCount() - sys->state_start_tick >= 700) {
+//        sys->descend_state = DOWN_EXTEND_REAR;
+//    }
     break;
   case DOWN_EXTEND_REAR:
     if (is_state_entry)
@@ -335,6 +357,7 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
     }
     break;
   case DOWN_DONE:
+		chassis.exp_vel.x=0.0f;
     sys->descend_state = DOWN_IDLE;
     sys->work_mode = LIFT_MODE_IDLE;
     break;

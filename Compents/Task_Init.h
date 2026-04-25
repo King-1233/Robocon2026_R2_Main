@@ -64,5 +64,5 @@ typedef struct
 } UartTxMsg_t;
 
 void Send_Remote_Data(UART_HandleTypeDef *huart,float dir_one, float dir_two,float vel_one, float vel_two);
-
+extern Chassis_t chassis;
 #endif
