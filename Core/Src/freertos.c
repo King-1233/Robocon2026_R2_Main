@@ -28,6 +28,7 @@
 #include "Task_Init.h"
 #include "semphr.h"
 #include "comm_stm32_hal_middle.h"
+#include "Task_Init_Main.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -151,6 +152,7 @@ void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
+	Task_Init_Main();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)

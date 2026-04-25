@@ -37,8 +37,8 @@ void UartTx_Init(void);
 void Task_Init(void)
 {
 		//JY61
-    __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
-    HAL_UART_Receive_DMA(&huart4, usart4_dma_buff, sizeof(usart4_dma_buff));
+//    __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
+//    HAL_UART_Receive_DMA(&huart4, usart4_dma_buff, sizeof(usart4_dma_buff));
 		//遥控器
 		__HAL_UART_ENABLE_IT(&huart5, UART_IT_IDLE);
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart5, usart5_dma_buff, sizeof(usart5_dma_buff));
@@ -211,6 +211,7 @@ void Uart_Tx(void *pvParameters)
 		pack_t[1].expectDirection[1] = steeringWheelArray[3].expectDirection;
 		pack_t[1].expextVelocity[0] = steeringWheelArray[2].expextVelocity;
 		pack_t[1].expextVelocity[1] = steeringWheelArray[3].expextVelocity;
+		
 		
 		chassis.exp_vel.x = Remote_Control.Ex;
 		chassis.exp_vel.y = Remote_Control.Ey;

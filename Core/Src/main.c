@@ -31,6 +31,7 @@
 #include "CANDrive.h"
 #include "encoder.h"
 #include "Task_Init.h"
+#include "Task_Init_Main.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,7 +93,7 @@ int main(void)
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
-
+ 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();

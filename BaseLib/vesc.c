@@ -12,7 +12,7 @@ uint32_t VESC_SetVoltage(VESC_t *vesc,float percentage)
     CAN_TxHeaderTypeDef head;
     uint8_t buffer[4];
     uint32_t mailbox;
-    uint32_t temp=(int32_t)(percentage*1000.0);
+    uint32_t temp=(int32_t)(percentage*1000.0f);
 
     head.RTR=CAN_RTR_DATA;
     head.DLC=4;
@@ -42,7 +42,7 @@ uint32_t VESC_SetCurrent(VESC_t *vesc,float ampere)
     CAN_TxHeaderTypeDef head;
     uint8_t buffer[4];
     uint32_t mailbox;
-    uint32_t temp=(int32_t)(ampere*1000.0);
+    uint32_t temp=(int32_t)(ampere*1000.0f);
 
     head.RTR=CAN_RTR_DATA;
     head.DLC=4;
@@ -71,7 +71,7 @@ uint32_t VESC_SetBreakCur(VESC_t *vesc,float ampere)
     CAN_TxHeaderTypeDef head;
     uint8_t buffer[4];
     uint32_t mailbox;
-    uint32_t temp=(int32_t)(ampere*1000.0);
+    uint32_t temp=(int32_t)(ampere*1000.0f);
 
     head.RTR=CAN_RTR_DATA;
     head.DLC=4;

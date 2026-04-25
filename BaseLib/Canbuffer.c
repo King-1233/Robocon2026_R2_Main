@@ -145,3 +145,4 @@ void HAL_CAN_TxMailbox2AbortCallback(CAN_HandleTypeDef *hcan)
     if(CAN_Transmit_Error(hcan,0x02))   //传入0x02，表示发送取消
         CAN_SendCompleteServe(hcan);
 }
+
