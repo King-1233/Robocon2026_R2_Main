@@ -214,13 +214,23 @@ void Uart_Tx(void *pvParameters)
 		pack_t[1].expextVelocity[0] = steeringWheelArray[2].expextVelocity;
 		pack_t[1].expextVelocity[1] = steeringWheelArray[3].expextVelocity;
 		
+		if(Remote_Control.First.Right_Key_Down && Remote_Control.Second.Right_Key_Down)
+		{
+			LiftSystem.work_mode = ROMOTE_MODE;
+		}
 		if (LiftSystem.work_mode == LIFT_MODE_IDLE) 
 		{
-		chassis.exp_vel.x = Remote_Control.Ex;
-		chassis.exp_vel.y = Remote_Control.Ey;
-		chassis.exp_vel.z = Remote_Control.Eomega;
+		chassis.exp_vel.x = PCMotor.velocity.vx;
+		chassis.exp_vel.y = PCMotor.velocity.vy;
+		chassis.exp_vel.z = PCMotor.velocity.vz;
 		}
-		else 
+		else if (LiftSystem.work_mode == ROMOTE_MODE)
+		{
+			chassis.exp_vel.x = Remote_Control.Ex;
+			chassis.exp_vel.y = Remote_Control.Ey;
+			chassis.exp_vel.z = Remote_Control.Eomega;
+		}
+		else if (LiftSystem.work_mode == LIFT_MODE_CLIMB_UP || LiftSystem.work_mode == LIFT_MODE_CLIMB_DOWN)
 		{
 			if (Remote_Control.First.Left_Key_Down && Remote_Control.Second.Left_Key_Down)
 			{

@@ -15,16 +15,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)// 接收CAN消�
 		RobStrideRecv_Handle(&LiftSystem.motors[2].Rs_motor, &hcan1, ID, buf);
 	}
 }
-//void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)// 接收CAN消息回调函数
-//{
-//	if (hcan->Instance == CAN2)
-//	{
-//		uint8_t buf[8];
-//		uint32_t ID = CAN_Receive_DataFrame(&hcan2, buf);
-//		RobStrideRecv_Handle(&LiftSystem.motors[1].Rs_motor, &hcan2, ID, buf);
-//	}
-//}
-	
 void UART_IT(UART_HandleTypeDef *huart)
 {
     if (__HAL_UART_GET_IT_SOURCE(huart, UART_IT_IDLE) && __HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE))
@@ -43,5 +33,13 @@ void UART_IT(UART_HandleTypeDef *huart)
             STP_23L_DataProcess(STP4_Data, &LiftSystem.sensor_rear);
             HAL_UART_Receive_DMA(&huart4, STP4_Data, sizeof(STP4_Data));
         } 
+	}
+}
+void USB_CDC_callback(uint8_t *src,uint16_t size)
+{
+	 memcpy(myUsbRxData,src,size);
+	if(myUsbRxData[0]==0xAB && myUsbRxData[15]==0xBA)
+	{
+		 memcpy(&PCMotor,myUsbRxData,sizeof(PCMotor_t));
 	}
 }

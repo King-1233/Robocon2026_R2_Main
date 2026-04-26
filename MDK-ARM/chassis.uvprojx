@@ -927,6 +927,16 @@
               <FileType>5</FileType>
               <FilePath>..\BaseLib\VL53.h</FilePath>
             </File>
+            <File>
+              <FileName>usb_trans.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BaseLib\usb_trans.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_trans.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BaseLib\usb_trans.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

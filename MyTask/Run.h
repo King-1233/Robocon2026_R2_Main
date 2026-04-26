@@ -8,7 +8,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include <stdbool.h>
-#include "ForceChassis.h" 
+#include "ForceChassis.h"
 #include "Task_Init.h"
 #include "STP-23L.h"
 typedef struct
@@ -39,33 +39,34 @@ typedef enum
 } ClimbState_e;
 typedef enum
 {
-    DOWN_IDLE = 0,
-    DOWN_FORWARD_1,
-    DOWN_EXTEND_FRONT,
-    DOWN_FORWARD_2,
-    DOWN_EXTEND_MID,
-    DOWN_FORWARD_3,
-    DOWN_EXTEND_REAR,
-    DOWN_ALL,
-    DOWN_DONE, // 下台阶完成
+    DOWN_IDLE = 0,     // 0: 空闲状态/待机
+    DOWN_FORWARD_1,    // 1: 第一次前进 (前轮搭下台阶)
+    DOWN_EXTEND_FRONT, // 2: 扩展前轮机构
+    DOWN_FORWARD_2,    // 3: 第二次前进 (中轮搭下台阶)
+    DOWN_EXTEND_MID,   // 4: 扩展中间底盘
+    DOWN_FORWARD_3,    // 5: 第三次前进 (后轮搭下台阶)
+    DOWN_EXTEND_REAR,  // 6: 扩展后轮机构
+    DOWN_ALL,          // 7: 所有机构都收起
+    DOWN_DONE,         // 8: 下台阶完成
 } DescendState_e;
 typedef enum
 {
-    LIFT_MODE_IDLE = 0,
-    LIFT_MODE_CLIMB_UP,
-    LIFT_MODE_CLIMB_DOWN,
-} LiftMode_e;
+    LIFT_MODE_IDLE = 0,   // 0: 空闲状态/待机
+    LIFT_MODE_CLIMB_UP,   // 1: 上台阶
+    LIFT_MODE_CLIMB_DOWN, // 2: 下台阶
+	  ROMOTE_MODE,
+} LiftMode_e;             // 提升电机工作模式
 typedef struct
 {
-    float target_height; // 目标高度（米）
+    float target_height; // 目标提升高度（米）
     float duration_ms;   // 轨迹运行时间（毫秒）
 } LiftCmd_t;
 typedef struct
 {
-    uint8_t head; 
+    uint8_t head;
     uint8_t state;
-	uint8_t back;
-}Arm_t;//机械臂是否执行一次动作结构体
+    uint8_t back;
+} Arm_t; // 机械臂是否执行一次动作结构体
 typedef struct
 {
     LiftMotor_t motors[3];             // 电机指针数
@@ -78,13 +79,35 @@ typedef struct
     DescendState_e descend_state;      // 下台阶状态
     DescendState_e last_descend_state; // 上一个下台阶状态
     LiftMode_e work_mode;              // 工作模式
-	  STP_23L_Data sensor_front;
-	  STP_23L_Data sensor_rear;
+    STP_23L_Data sensor_front;         // 前轮传感器数据
+    STP_23L_Data sensor_rear;          // 后轮传感器数据
     float height_lift_up;              // 车身整体抬升的目标高度 (米)
     float back_height_retract;         // 机构收起时的目标高度 (米)
     float pos_error_threshold;         // 判断是否到位的位置误差阈值 (弧度或米)
-		uint32_t  state_start_tick;
+    uint32_t state_start_tick;         // 状态开始时间戳
 } LiftSystem_t;
+typedef struct
+{
+    float vx;
+    float vy;
+    float vz;
+} Velocity_t;
+#pragma pack(1)
+typedef struct
+{
+    uint8_t head;
+    Velocity_t velocity;
+    uint8_t state;
+    uint8_t height;
+    uint8_t back;
+} PCMotor_t;
+typedef struct
+{
+    uint8_t head;
+    uint8_t state_callback;
+    uint8_t back;
+} TransMotor_t;
+#pragma pack()
 // 任务句柄声明
 extern TaskHandle_t Rising_Task_handle;
 extern LiftSystem_t LiftSystem; // 3个提升电机
@@ -95,5 +118,10 @@ void ClimbFSM_Step(LiftSystem_t *sys);     // 状态机更新
 void LiftSystem_Init(LiftSystem_t *sys);   // 初始化提升系统
 void ClimbDown_Step(LiftSystem_t *sys);    // 下台阶状态机更新
 void LiftSystem_Update(LiftSystem_t *sys); // 更新提升系统状态
-extern uint8_t STP3_Data[194],STP4_Data[194];
+void Send_TransMotor_State(uint8_t state); // 发送提升电机状态
+void Parse_PC_Command(void);               // 解析PC命令
+extern uint8_t STP3_Data[194], STP4_Data[194];
+extern uint8_t myUsbRxData[64];
+extern PCMotor_t PCMotor;
+extern TransMotor_t TransMotor;
 #endif
