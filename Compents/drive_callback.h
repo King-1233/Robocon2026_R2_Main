@@ -13,7 +13,7 @@
 #define PI 3.14159265358979f
 #define ANGLE2RAD(x) (x) * PI / 180.0f
 #define RAD2ANGLE(x) (x) * 180.0f / PI
-#define wheel_radius 0.0495f //轮子半径，单位m
+#define wheel_radius 0.048f //轮子半径，单位m
 #define n 4.0f
 #define KV 170
 

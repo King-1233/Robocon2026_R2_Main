@@ -93,8 +93,8 @@ void Wheel_Task(void *pvParameters)
 			UpdateAngle(swheel);
 			PID_Control2(swheel->currentDirection, swheel->putoutDirection, &swheel->Steering_Dir_PID);//角度环
 			PID_Control2(swheel->SteeringMotor.Speed, swheel->Steering_Dir_PID.pid_out, &swheel->Steering_Vel_PID);//速度环
-			
-			PID_Control_d(swheel->DriveMotor.epm / 7.0f, (swheel->putoutVelocity / wheel_radius / (2.0f * PI) * 60.0f) * 3.3333334f, &swheel->Driver_Vel_PID);
+			float temp_epm = swheel->DriveMotor.epm;
+			PID_Control_d(temp_epm/ 7.0f, (swheel->putoutVelocity / wheel_radius / (2.0f * PI) * 60.0f) * 3.3333334f, &swheel->Driver_Vel_PID);
       
 			vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(2));
     }
@@ -108,19 +108,19 @@ void Can_Send(void *pvParameters)
 		TickType_t last_wake_time = xTaskGetTickCount();
 		
 		steeringWheelArray[0].DriveMotor.hcan = &hcan2;
-		steeringWheelArray[0].DriveMotor.motor_id = 0x03;
+		steeringWheelArray[0].DriveMotor.motor_id = 0x01;
 		steeringWheelArray[1].DriveMotor.hcan = &hcan2;
-		steeringWheelArray[1].DriveMotor.motor_id = 0x04;
+		steeringWheelArray[1].DriveMotor.motor_id = 0x02;
 	
 		for(;;)
 		{
 			steeringWheelArray[0].expectDirection = Pack_Trans.expectDirection[0];
-			steeringWheelArray[1].expectDirection = Pack_Trans.expectDirection[1];
-			steeringWheelArray[0].expextVelocity = -Pack_Trans.expextVelocity[0];
-			steeringWheelArray[1].expextVelocity = -Pack_Trans.expextVelocity[1];
+			steeringWheelArray[1].expectDirection = -Pack_Trans.expectDirection[1];
+			steeringWheelArray[0].expextVelocity = Pack_Trans.expextVelocity[0];
+			steeringWheelArray[1].expextVelocity = Pack_Trans.expextVelocity[1];
 			
-			motorCurrentBuf[2] = steeringWheelArray[0].Steering_Vel_PID.pid_out;
-			motorCurrentBuf[3] = steeringWheelArray[1].Steering_Vel_PID.pid_out;
+			motorCurrentBuf[0] = steeringWheelArray[0].Steering_Vel_PID.pid_out;
+			motorCurrentBuf[1] = -steeringWheelArray[1].Steering_Vel_PID.pid_out;
 
 			MotorSend(&hcan2, 0x200, motorCurrentBuf);
 			
@@ -166,13 +166,15 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) // 接收2006的
 	VESC_ReceiveHandler(&steeringWheelArray[1].DriveMotor, hcan, ID, Recv);
   if (hcan->Instance == CAN2)
   {
-    if (ID == 0x203) // 左上，象限2
+    if (ID == 0x201) // 左上，象限2
     {
       M2006_Receive(&steeringWheelArray[0].SteeringMotor, Recv);
     }
-    else if (ID == 0x204) // 右上(象限1)
+    else if (ID == 0x202) // 右上(象限1)
     {
       M2006_Receive(&steeringWheelArray[1].SteeringMotor, Recv);
+			steeringWheelArray[1].SteeringMotor.Speed = -steeringWheelArray[1].SteeringMotor.Speed;
+      steeringWheelArray[1].SteeringMotor.Angle = -steeringWheelArray[1].SteeringMotor.Angle;
     }
   }
 }
