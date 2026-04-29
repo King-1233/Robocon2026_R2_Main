@@ -124,4 +124,5 @@ extern uint8_t STP3_Data[194], STP4_Data[194];
 extern uint8_t myUsbRxData[64];
 extern PCMotor_t PCMotor;
 extern TransMotor_t TransMotor;
+extern uint8_t reset;
 #endif

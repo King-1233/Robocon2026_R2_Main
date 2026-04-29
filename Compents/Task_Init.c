@@ -216,8 +216,15 @@ void Uart_Tx(void *pvParameters)
 		
 		if(Remote_Control.First.Right_Key_Down && Remote_Control.Second.Right_Key_Down)
 		{
+			
 			LiftSystem.work_mode = ROMOTE_MODE;
 		}
+		if(Remote_Control.First.Right_Key_Up && Remote_Control.Second.Right_Key_Up)
+		{
+			
+			LiftSystem.work_mode = LIFT_MODE_IDLE;
+		}
+		
 		if (LiftSystem.work_mode == LIFT_MODE_IDLE) 
 		{
 		chassis.exp_vel.x = PCMotor.velocity.vx;
@@ -235,6 +242,9 @@ void Uart_Tx(void *pvParameters)
 			if (Remote_Control.First.Left_Key_Down && Remote_Control.Second.Left_Key_Down)
 			{
 				LiftSystem.work_mode = LIFT_MODE_IDLE;
+				LiftSystem.climb_state=CLIMB_IDLE;
+				LiftSystem.descend_state=DOWN_IDLE;
+				reset=1;
 				chassis.exp_vel.x = 0;
 				chassis.exp_vel.y = 0;
 				chassis.exp_vel.z = 0;

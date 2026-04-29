@@ -19,6 +19,7 @@ uint8_t test_triggered_test_mid = 0;    // 中轮测试触发标志位
 uint8_t test_triggered_test_rear = 0;   // 后轮测试触发标志位
 uint8_t reset = 0;                      // 重置标志位
 // Arm_t arm;                          // 机械臂是否执行一次动作结构体实例
+uint8_t houliang=0;
 TaskHandle_t Rising_Task_handle = NULL;
 static bool IsMotorAtTarget(const LiftMotor_t *motor, float target_rad); // 检查电机是否到达目标位置
 /**
@@ -58,6 +59,12 @@ void Rising_Task(void *pvParameters)
       LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[2], 0, LiftSystem.lift_cmd[2].duration_ms);
       reset = 0;
     }
+		if(houliang)
+		{
+      LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[1], LiftSystem.lift_cmd[1].target_height, LiftSystem.lift_cmd[1].duration_ms);
+      LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[2], LiftSystem.lift_cmd[2].target_height, LiftSystem.lift_cmd[2].duration_ms);
+      houliang = 0;	
+		}
 
     //    if (Remote_Control.First.Left_Key_Up && Remote_Control.Second.Left_Key_Up)
     //    {
@@ -122,7 +129,7 @@ void LiftSystem_Init(LiftSystem_t *sys) // 初始化提升系统
   sys->inertia_gain = 0.08f;           // 初始化惯性增益系数为0.08f
   sys->height_lift_up = 0.23f;         // 初始化上台阶高度为0.23f
   sys->back_height_retract = 0.0f;     // 初始化回缩高度为0.0f
-  sys->pos_error_threshold = 0.12f;    // 初始化位置误差阈值为0.12f
+  sys->pos_error_threshold = 0.18f;    // 初始化位置误差阈值为0.12f
 
   for (int i = 0; i < 3; i++)
   {
@@ -260,10 +267,11 @@ void ClimbFSM_Step(LiftSystem_t *sys) // 状态机更新
   case CLIMB_RETRACT_REAR:
     if (is_state_entry)
     {
+			
       LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->back_height_retract, sys->lift_cmd[2].duration_ms);
       sys->state_start_tick = xTaskGetTickCount();
     }
-    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->back_height_retract)) && (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(2500)))
+    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->back_height_retract)) && (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(2000)))
     {
       sys->climb_state = CLIMB_DONE;
     }
@@ -327,7 +335,7 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
     }
     break;
   case DOWN_FORWARD_3:
-    if (is_state_entry)
+    if (is_state_entry) 
     {
       sys->state_start_tick = xTaskGetTickCount();
     }
@@ -337,7 +345,7 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
     }
     else
     {
-      if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(1000))
+      if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(1500))
       {
         sys->descend_state = DOWN_EXTEND_REAR;
       }
