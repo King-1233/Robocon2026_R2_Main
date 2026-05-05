@@ -11,6 +11,7 @@
 #include "ForceChassis.h"
 #include "Task_Init.h"
 #include "STP-23L.h"
+#define WINDOW_SIZE 5
 typedef struct
 {
     RobStride_t Rs_motor;      // 电机结构体
@@ -54,8 +55,8 @@ typedef enum
     LIFT_MODE_IDLE = 0,   // 0: 空闲状态/待机
     LIFT_MODE_CLIMB_UP,   // 1: 上台阶
     LIFT_MODE_CLIMB_DOWN, // 2: 下台阶
-	  ROMOTE_MODE,
-} LiftMode_e;             // 提升电机工作模式
+    ROMOTE_MODE,
+} LiftMode_e; // 提升电机工作模式
 typedef struct
 {
     float target_height; // 目标提升高度（米）
@@ -82,6 +83,7 @@ typedef struct
     STP_23L_Data sensor_front;         // 前轮传感器数据
     STP_23L_Data sensor_rear;          // 后轮传感器数据
     float height_lift_up;              // 车身整体抬升的目标高度 (米)
+    float height_lift_shou;            // 前轮机构目标高度 (米)
     float back_height_retract;         // 机构收起时的目标高度 (米)
     float pos_error_threshold;         // 判断是否到位的位置误差阈值 (弧度或米)
     uint32_t state_start_tick;         // 状态开始时间戳
@@ -107,6 +109,15 @@ typedef struct
     uint8_t state_callback;
     uint8_t back;
 } TransMotor_t;
+
+typedef struct
+{
+    float data[WINDOW_SIZE];
+    uint16_t head;
+    uint16_t count;
+    float sum;
+    float filtered_val;
+} SlidingWindow_t;
 #pragma pack()
 // 任务句柄声明
 extern TaskHandle_t Rising_Task_handle;
@@ -120,6 +131,8 @@ void ClimbDown_Step(LiftSystem_t *sys);    // 下台阶状态机更新
 void LiftSystem_Update(LiftSystem_t *sys); // 更新提升系统状态
 void Send_TransMotor_State(uint8_t state); // 发送提升电机状态
 void Parse_PC_Command(void);               // 解析PC命令
+float MovingAverage_Update(SlidingWindow_t *window, float new_val);
+void SlidingWindow_Init(SlidingWindow_t *window);
 extern uint8_t STP3_Data[194], STP4_Data[194];
 extern uint8_t myUsbRxData[64];
 extern PCMotor_t PCMotor;

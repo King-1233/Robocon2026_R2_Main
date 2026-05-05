@@ -19,8 +19,12 @@ uint8_t test_triggered_test_mid = 0;    // 中轮测试触发标志位
 uint8_t test_triggered_test_rear = 0;   // 后轮测试触发标志位
 uint8_t reset = 0;                      // 重置标志位
 // Arm_t arm;                          // 机械臂是否执行一次动作结构体实例
-uint8_t houliang=0;
+uint8_t houliang = 0;
+SlidingWindow_t my_ffilter,my_rfilter; // 力矩滑动窗口滤波器578
 TaskHandle_t Rising_Task_handle = NULL;
+float val=-0.22f,tim=500.0f;
+uint32_t time[2];
+int lead[2]={130,400};
 static bool IsMotorAtTarget(const LiftMotor_t *motor, float target_rad); // 检查电机是否到达目标位置
 /**
  * @brief 升降任务
@@ -31,7 +35,9 @@ void Rising_Task(void *pvParameters)
   TickType_t last_wake_time = xTaskGetTickCount();
   LiftSystem_Init(&LiftSystem); // 初始化提升系统
   vTaskDelay(100);
-  APP_SetZeroPosition();                      // 设置提升电机位置为0
+  APP_SetZeroPosition(); // 设置提升电机位置为0
+  SlidingWindow_Init(&my_ffilter);
+	SlidingWindow_Init(&my_rfilter);
   USB_CDC_Init(USB_CDC_callback, NULL, NULL); // 初始化USB CDC
   for (;;)
   {
@@ -59,12 +65,12 @@ void Rising_Task(void *pvParameters)
       LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[2], 0, LiftSystem.lift_cmd[2].duration_ms);
       reset = 0;
     }
-		if(houliang)
-		{
+    if (houliang)
+    {
       LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[1], LiftSystem.lift_cmd[1].target_height, LiftSystem.lift_cmd[1].duration_ms);
       LiftMotor_SetTrajectoryTarget(&LiftSystem.motors[2], LiftSystem.lift_cmd[2].target_height, LiftSystem.lift_cmd[2].duration_ms);
-      houliang = 0;	
-		}
+      houliang = 0;
+    }
 
     //    if (Remote_Control.First.Left_Key_Up && Remote_Control.Second.Left_Key_Up)
     //    {
@@ -127,14 +133,15 @@ void LiftSystem_Init(LiftSystem_t *sys) // 初始化提升系统
   sys->motion_kp = 150.0f;             // 初始化运动比例系数为150.0f
   sys->motion_kd = 2.0f;               // 初始化运动微分系数为2.0f
   sys->inertia_gain = 0.08f;           // 初始化惯性增益系数为0.08f
-  sys->height_lift_up = 0.23f;         // 初始化上台阶高度为0.23f
+  sys->height_lift_up = 0.26f;         // 初始化上台阶高度为0.26f
+  sys->height_lift_shou = 0.23f;       //
   sys->back_height_retract = 0.0f;     // 初始化回缩高度为0.0f
-  sys->pos_error_threshold = 0.18f;    // 初始化位置误差阈值为0.12f
+  sys->pos_error_threshold = 0.25f;    // 初始化位置误差阈值为0.12f
 
   for (int i = 0; i < 3; i++)
   {
     sys->lift_cmd[i].target_height = 0.0f; // 初始化提升命令目标高度为0.0f
-    sys->lift_cmd[i].duration_ms = 700.0f; // 初始化提升命令持续时间为700ms
+    sys->lift_cmd[i].duration_ms = 550.0f; // 初始化提升命令持续时间为700ms
     sys->motors[i].exp_rad = 0.0f;         // 初始化提升电机期望角度为0.0f
     sys->motors[i].exp_omega = 0.0f;       // 初始化提升电机期望角速度为0.0f
     sys->motors[i].exp_acc = 0.0f;         // 初始化提升电机期望加速度为0.0f
@@ -152,19 +159,22 @@ void Parse_PC_Command(void) // 解析PC命令
   {
     return;
   }
-  float target_lift_height = 0.23f;
+  float target_lift_height = 0.26f;
+  float target_shou_height = 0.22f;
   if (PCMotor.height == 1)
   {
-    target_lift_height = 0.23f;
+    target_lift_height = 0.26f;
+    target_shou_height = 0.22f;
   }
   else if (PCMotor.height == 2)
   {
     target_lift_height = 0.42f;
+    target_shou_height = 0.42f;
   }
 
-  LiftSystem.height_lift_up = target_lift_height;// 设置上台阶高度为目标高度
-
-  if (PCMotor.state == 1) // 准备上台阶
+  LiftSystem.height_lift_up = target_lift_height;   // 设置上台阶高度为目标高度
+  LiftSystem.height_lift_shou = target_shou_height; // 设置前轮机构高度为目标高度
+  if (PCMotor.state == 1)                           // 准备上台阶
   {
     LiftSystem.work_mode = LIFT_MODE_CLIMB_UP;
     LiftSystem.climb_state = CLIMB_LIFT_ALL;
@@ -201,8 +211,8 @@ void LiftSystem_Update(LiftSystem_t *sys) // 更新提升系统状态
   case LIFT_MODE_CLIMB_DOWN:
     ClimbDown_Step(sys); // 下台阶逻辑
     break;
-	case ROMOTE_MODE:
-		break;
+  case ROMOTE_MODE:
+    break;
   }
 }
 void ClimbFSM_Step(LiftSystem_t *sys) // 状态机更新
@@ -220,6 +230,7 @@ void ClimbFSM_Step(LiftSystem_t *sys) // 状态机更新
     {
       LiftMotor_SetTrajectoryTarget(&sys->motors[1], (sys->height_lift_up), sys->lift_cmd[1].duration_ms);
       LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->height_lift_up, sys->lift_cmd[2].duration_ms);
+      LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->height_lift_up, sys->lift_cmd[0].duration_ms);
     }
     if (IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->height_lift_up)) &&
         IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->height_lift_up)))
@@ -228,55 +239,62 @@ void ClimbFSM_Step(LiftSystem_t *sys) // 状态机更新
     }
     break;
   case CLIMB_FORWARD_1:
-    chassis.exp_vel.x = -0.12f;
-    sys->climb_state = CLIMB_FORWARD_2;
+    chassis.exp_vel.x = val;
+    sys->climb_state = CLIMB_RETRACT_FRONT;
     break;
   case CLIMB_RETRACT_FRONT:
     if (is_state_entry)
     {
-      LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->back_height_retract, sys->lift_cmd[0].duration_ms);
+      sys->lift_cmd[0].target_height = 0.03f;
+      LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->lift_cmd[0].target_height, sys->lift_cmd[0].duration_ms);
     }
-    if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->back_height_retract)))
+    if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->lift_cmd[0].target_height)))
     {
       sys->climb_state = CLIMB_FORWARD_2;
     }
     break;
   case CLIMB_FORWARD_2:
-    if (sys->sensor_front.distance < 380.0f)
-    {
+	{
+		if(sys->sensor_front.distance<=380.0f) 
+		{
       sys->climb_state = CLIMB_RETRACT_MID;
+			time[1]=xTaskGetTickCount();
     }
+	}
     break;
   case CLIMB_RETRACT_MID:
     if (is_state_entry)
     {
-      LiftMotor_SetTrajectoryTarget(&sys->motors[1], sys->back_height_retract, sys->lift_cmd[1].duration_ms);
+      sys->lift_cmd[1].target_height = 0.03f;
+      LiftMotor_SetTrajectoryTarget(&sys->motors[1], sys->lift_cmd[1].target_height, sys->lift_cmd[1].duration_ms);
     }
-    if (IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->back_height_retract)))
+    if (IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->lift_cmd[1].target_height)))
     {
       sys->climb_state = CLIMB_FORWARD_3;
     }
     break;
-
   case CLIMB_FORWARD_3:
-    if (sys->sensor_rear.distance < 380.0f)
-    {
-      sys->climb_state = CLIMB_RETRACT_REAR;
-    }
+	if(xTaskGetTickCount() - time[1]>= pdMS_TO_TICKS(fabs(lead[1]/val)))
+		{
+	 sys->climb_state = CLIMB_RETRACT_REAR;
+	  }
     break;
   case CLIMB_RETRACT_REAR:
     if (is_state_entry)
     {
-			
-      LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->back_height_retract, sys->lift_cmd[2].duration_ms);
+      sys->lift_cmd[2].target_height = 0.02f;
+			sys->lift_cmd[2].duration_ms = tim;
+      LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->lift_cmd[2].target_height, sys->lift_cmd[2].duration_ms);
       sys->state_start_tick = xTaskGetTickCount();
     }
-    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->back_height_retract)) && (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(2000)))
+    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->lift_cmd[2].target_height)) && (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(1800)))
     {
       sys->climb_state = CLIMB_DONE;
     }
     break;
   case CLIMB_DONE:
+		sys->lift_cmd[2].duration_ms = 550;
+    reset = 1;
     chassis.exp_vel.x = 0.0f;
     sys->climb_state = CLIMB_IDLE;
     sys->work_mode = LIFT_MODE_IDLE;
@@ -295,8 +313,8 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
   case DOWN_IDLE:
     break;
   case DOWN_FORWARD_1:
-    chassis.exp_vel.x = -0.12f;
-    if (sys->motors[0].Rs_motor.state.torque <= 2.0f)
+    chassis.exp_vel.x = val;
+    if (sys->motors[0].Rs_motor.state.torque<= 2.0f)
     {
       sys->state_start_tick = xTaskGetTickCount();
     }
@@ -311,9 +329,9 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
   case DOWN_EXTEND_FRONT:
     if (is_state_entry)
     {
-      LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->height_lift_up, sys->lift_cmd[0].duration_ms);
+      LiftMotor_SetTrajectoryTarget(&sys->motors[0], sys->height_lift_shou, sys->lift_cmd[0].duration_ms);
     }
-    if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->height_lift_up)))
+    if (IsMotorAtTarget(&sys->motors[0], distance_to_motor_rad(sys->height_lift_shou)))
     {
       sys->descend_state = DOWN_FORWARD_2;
     }
@@ -327,25 +345,27 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
   case DOWN_EXTEND_MID:
     if (is_state_entry)
     {
-      LiftMotor_SetTrajectoryTarget(&sys->motors[1], sys->height_lift_up, sys->lift_cmd[1].duration_ms);
+      LiftMotor_SetTrajectoryTarget(&sys->motors[1], sys->height_lift_shou, sys->lift_cmd[1].duration_ms);
     }
-    if (IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->height_lift_up)))
+    if (IsMotorAtTarget(&sys->motors[1], distance_to_motor_rad(sys->height_lift_shou)))
     {
       sys->descend_state = DOWN_FORWARD_3;
     }
     break;
   case DOWN_FORWARD_3:
-    if (is_state_entry) 
+    if (is_state_entry)
     {
       sys->state_start_tick = xTaskGetTickCount();
     }
-    if (sys->motors[2].Rs_motor.state.torque >= -1.0f)
+    float torque_rear = sys->motors[2].Rs_motor.state.torque; 
+    float filtered_r = MovingAverage_Update(&my_rfilter, torque_rear);  
+    if (filtered_r >= -1.0f)
     {
       sys->state_start_tick = xTaskGetTickCount();
     }
     else
     {
-      if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(1500))
+      if (xTaskGetTickCount() - sys->state_start_tick >= pdMS_TO_TICKS(700))
       {
         sys->descend_state = DOWN_EXTEND_REAR;
       }
@@ -354,9 +374,9 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
   case DOWN_EXTEND_REAR:
     if (is_state_entry)
     {
-      LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->height_lift_up, sys->lift_cmd[2].duration_ms);
+      LiftMotor_SetTrajectoryTarget(&sys->motors[2], sys->height_lift_shou, sys->lift_cmd[2].duration_ms);
     }
-    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->height_lift_up)))
+    if (IsMotorAtTarget(&sys->motors[2], distance_to_motor_rad(sys->height_lift_shou)))
     {
       sys->descend_state = DOWN_ALL;
     }
@@ -384,4 +404,31 @@ void ClimbDown_Step(LiftSystem_t *sys) // 状态机更新
   default:
     break;
   }
+}
+void SlidingWindow_Init(SlidingWindow_t *window)
+{
+    memset(window->data, 0, sizeof(window->data));
+    window->head = 0;
+    window->count = 0;
+    window->sum = 0.0f;
+    window->filtered_val = 0.0f;
+}
+float MovingAverage_Update(SlidingWindow_t *window, float new_val)
+{
+  if (window == NULL)
+    return 0.0f;
+
+  if (window->count < WINDOW_SIZE)
+  {
+    window->count++;
+  }
+  else
+  {
+    window->sum -= window->data[window->head];
+  }
+  window->data[window->head] = new_val;
+  window->sum += new_val;
+  window->head = (window->head + 1) % WINDOW_SIZE;
+  window->filtered_val = window->sum / window->count;
+  return window->filtered_val;
 }
