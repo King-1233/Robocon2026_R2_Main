@@ -79,7 +79,7 @@ void Wheel_Task(void *pvParameters)
     swheel->Driver_Vel_PID.Kp = 0.8f;
     swheel->Driver_Vel_PID.Ki = 0.002f;
     swheel->Driver_Vel_PID.Kd = 4.5f;
-    swheel->Driver_Vel_PID.limit = 50000.0f;
+    swheel->Driver_Vel_PID.limit = 45.0f;
     swheel->Driver_Vel_PID.output_limit = 45.0f;
 
     swheel->offset = 0.0f;
