@@ -73,13 +73,14 @@ void Wheel_Task(void *pvParameters)
     swheel->Steering_Dir_PID.Kp = 170.0f;
     swheel->Steering_Dir_PID.Ki = 0.0f;
     swheel->Steering_Dir_PID.Kd = 3.0f;
+	
     swheel->Steering_Dir_PID.limit = 10.0f;
     swheel->Steering_Dir_PID.output_limit = 10000.0f;
 
-    swheel->Driver_Vel_PID.Kp = 0.8f;
+      swheel->Driver_Vel_PID.Kp = 0.8f;
     swheel->Driver_Vel_PID.Ki = 0.002f;
     swheel->Driver_Vel_PID.Kd = 4.5f;
-    swheel->Driver_Vel_PID.limit = 50000.0f;
+    swheel->Driver_Vel_PID.limit = 45.0f;
     swheel->Driver_Vel_PID.output_limit = 45.0f;
 
     swheel->offset = 0.0f;
@@ -87,7 +88,9 @@ void Wheel_Task(void *pvParameters)
     swheel->floatRotateAngle = 340.0f;
     swheel->ready_edge_flag = 0;
 	  swheel->expextForce = 0.0f;
-		
+		steeringWheelArray[1].Driver_Vel_PID.Kp=0.15f;
+		steeringWheelArray[1].Driver_Vel_PID.Ki=0.005f;
+		steeringWheelArray[1].Driver_Vel_PID.Kd=0.0f;
     for(;;)
     {
 			UpdateAngle(swheel);
